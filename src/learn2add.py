@@ -5,15 +5,19 @@ import theano.tensor as T
 
 
 if __name__ == "__main__":
-    SIZE_NBR_INPUT=32
+    SIZE_NBR_INPUT=16
     BATCH_SIZE=1
 
-    X ="../data/X.txt"
-    random_data_X = np.random.rand(100, 2*SIZE_NBR_INPUT);
-    random_test_data_X = np.random.rand(1, 2*SIZE_NBR_INPUT);
-    Y ="../data/Y.txt"
-    # random_data_Y = np.zeros((100, SIZE_NBR_INPUT)) #np.random.rand(100, SIZE_NBR_INPUT);
-    random_data_Y = np
+    X =np.genfromtxt("../data/input.txt", delimiter=1)
+    Y =np.genfromtxt("../data/output.txt", delimiter=1)
+    random_data_X = X
+    random_data_Y = Y
+    # random_data_X = np.random.rand(100, 2*SIZE_NBR_INPUT, )
+    random_test_data_X = X[0:10,:]
+    for e in random_data_X:
+        print e
+    # random_data_Y = np.zeros((100, SIZE_NBR_INPUT)) #np.random.rand(100, SIZE_NBR_INPUT)
+    # random_data_Y = np.sum(random_data_X,
 
     # create Theano variables for input and target minibatch
     input_var = T.dmatrix('X')
@@ -49,7 +53,8 @@ if __name__ == "__main__":
     # use trained network for predictions
     test_prediction = lasagne.layers.get_output(l_out, deterministic=True)
     predict_fn = theano.function([input_var], test_prediction)
-    print("Predicted class for first test input:\n %r" % ("".join(map(str,list((1*(0.5 < predict_fn(random_test_data_X)[0])))))))
+    for e in random_test_data_X:
+    print("Predicted class for first test input:\n %r" % ("".join(map(str,list((1*(0.5 < predict_fn(e)[0])))))))
 
     # The following function will output both the out and the hidden layer's
     # output when some data is applied to it
