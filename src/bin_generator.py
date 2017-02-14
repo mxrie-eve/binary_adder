@@ -16,7 +16,7 @@ def bin2biggerbin(x):
 m = [0,0]
 
 NB_BIT = 16
-for i in range(1000):
+for i in range(100000):
   for j in range(2):
     # Generate a 31 char long binary in the decimal format
     number = r.getrandbits(NB_BIT -1)
