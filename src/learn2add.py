@@ -28,7 +28,8 @@ if __name__ == "__main__":
 
     # We create the layesr of our NN
     l_in = lasagne.layers.InputLayer((BATCH_SIZE, 2*SIZE_NBR_INPUT), input_var=input_var)
-    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=2*SIZE_NBR_INPUT, nonlinearity=lasagne.nonlinearities.sigmoid) # should try this experiement without the middle layer.
+    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=1, nonlinearity=lasagne.nonlinearities.rectify)
+    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=SIZE_NBR_INPUT+1, nonlinearity=lasagne.nonlinearities.rectify)
     l_out = lasagne.layers.DenseLayer(l_hidden, num_units=SIZE_NBR_INPUT, nonlinearity=lasagne.nonlinearities.sigmoid)
 
     # create loss function
