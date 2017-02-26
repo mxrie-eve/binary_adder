@@ -4,16 +4,17 @@ import theano
 import lasagne
 import theano.tensor as T
 
-def data_splitter(array_data, array_ratios) :
-  size = array_data.shape
-  array_returned = []
 
-  for i in range (len(array_ratios) - 1):
-    nb_datas = int(math.floor(array_ratios[i]*size[0]))
-    array_returned.append(array_data[:nb_datas])
-    array_data = np.delete(array_data,np.arange(nb_datas),0 )
+def data_splitter(array_data, array_ratios):
+    size = array_data.shape
+    array_returned = []
 
-  return array_returned.append(array_data)
+    for i in range(len(array_ratios) - 1):
+        nb_datas = int(math.floor(array_ratios[i]*size[0]))
+        array_returned.append(array_data[:nb_datas])
+        array_data = np.delete(array_data, np.arange(nb_datas), 0)
+
+    return array_returned.append(array_data)
 
 
 def creating_model(nb_bits_number, batch_size=1):
@@ -124,8 +125,8 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
 
             print("Error on training set: %1.4f/%d ",
                     (np.mean(nb_errors), nb_bits_number)
-            print("Error on validation set: %1.4f/%d ",
-                    (np.mean(nb_errors), nb_bits_number)
+            # print("Error on validation set: %1.4f/%d ",
+            #         (np.mean(nb_errors), nb_bits_number)
 
             # TODO save model every n iterations.
 
