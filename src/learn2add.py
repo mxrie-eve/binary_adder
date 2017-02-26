@@ -3,10 +3,18 @@ import theano
 import lasagne
 import theano.tensor as T
 
-# Helper function:
-# ( np, ratio_training, ratio_valadation, ratio_testing)-> [np, np, np]
-def prepare_data(np_array, training_r, validation_r) :
-  return [training_array, validation_array]
+def data_splitter(array_data, array_ratios) :
+  size = array_data.shape
+  array_returned = []
+
+  for i in range (len(array_ratios) - 1):
+    nb_datas = int(math.floor(array_ratios[i]*size[0]))
+    array_returned.append(array_data[:nb_datas])
+    array_data = np.delete(array_data,np.arange(nb_datas),0 )
+
+  return array_returned.append(array_data)
+
+
 if __name__ == "__main__":
     SIZE_NBR_INPUT=16
     BATCH_SIZE=1 # increasing this will help stabilize the gradient. I've already tried it without success.
