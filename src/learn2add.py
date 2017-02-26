@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import theano
 import lasagne
@@ -15,73 +16,122 @@ def data_splitter(array_data, array_ratios) :
   return array_returned.append(array_data)
 
 
-if __name__ == "__main__":
-    SIZE_NBR_INPUT=16
-    BATCH_SIZE=1 # increasing this will help stabilize the gradient. I've already tried it without success.
-
-    X = np.genfromtxt("../data/input.txt", delimiter=1)
-    Y = np.genfromtxt("../data/output.txt", delimiter=1)
-
-    # we batchify the data
-    random_data_X = X.reshape(len(X)/BATCH_SIZE, BATCH_SIZE, 2*SIZE_NBR_INPUT)
-    random_data_Y = Y.reshape(len(Y)/BATCH_SIZE, BATCH_SIZE, SIZE_NBR_INPUT)
-
-    # random_data_X = np.random.rand(100, 2*SIZE_NBR_INPUT, )
-    random_test_data_X = X
-    # for e in random_data_X:
-        # print e
-    # random_data_Y = np.zeros((100, SIZE_NBR_INPUT)) #np.random.rand(100, SIZE_NBR_INPUT)
-    # random_data_Y = np.sum(random_data_X,
+def creating_model(nb_bits_number, batch_size=1):
 
     # create Theano variables for input and target minibatch
     input_var = T.dmatrix('X')
     target_var = T.dvector('y')
 
-    # We create the layesr of our NN
-    l_in = lasagne.layers.InputLayer((BATCH_SIZE, 2*SIZE_NBR_INPUT), input_var=input_var)
-    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=1, nonlinearity=lasagne.nonlinearities.rectify)
-    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=SIZE_NBR_INPUT+1, nonlinearity=lasagne.nonlinearities.rectify)
-    l_out = lasagne.layers.DenseLayer(l_hidden, num_units=SIZE_NBR_INPUT, nonlinearity=lasagne.nonlinearities.sigmoid)
+    l_in = lasagne.layers.InputLayer(
+            (batch_size, 2*nb_bits_number),
+            input_var=input_var)
+    l_hidden = lasagne.layers.DenseLayer(
+            l_in,
+            num_units=2*nb_bits_number,
+            nonlinearity=lasagne.nonlinearities.rectify)
+    l_out = lasagne.layers.DenseLayer(
+            l_hidden,
+            num_units=nb_bits_number,
+            nonlinearity=lasagne.nonlinearities.sigmoid)
 
-    # create loss function
+    # Creating loss function
     prediction = lasagne.layers.get_output(l_out)
     loss = lasagne.objectives.squared_error(prediction, target_var)
     loss = loss.mean()
 
     # create parameter update expressions
     params = lasagne.layers.get_all_params(l_out, trainable=True)
-    updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate=0.01, momentum=0.9)
-    # updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate=0.01, momentum=0.9)
+    updates = lasagne.updates.nesterov_momentum(
+            loss,
+            params,
+            learning_rate=0.01,
+            momentum=0.9)
 
-    # compile training function that updates parameters and returns training loss
-    train_fn = theano.function([input_var, target_var], loss, updates=updates,allow_input_downcast=True)
+    # Compile training function that updates parameters and returns training
+    # loss
+    train_fn = theano.function(
+            [input_var, target_var],
+            loss,
+            updates=updates,
+            allow_input_downcast=True)
+
+    return input_var, train_fn, l_out
 
 
-    # train network (assuming you've got some training data in numpy arrays)
-    NB_EPOCH = 7000
-    for epoch in range(NB_EPOCH):
+def get_sets(path_main_dataset_x, path_main_dataset_y):
+
+    X = np.genfromtxt(path_main_dataset_x, delimiter=1)
+    Y = np.genfromtxt(path_main_dataset_y,  delimiter=1)
+
+    return [X, Y, [], [], [], []]
+
+
+def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
+    # Increasing the batch_size will help stabilize the gradient.  I've already
+    # tried it without much success.
+    batch_size = 1
+
+    train_x, train_y, val_x, val_y, test_x, test_y = get_sets(
+            path_main_dataset_x,
+            path_main_dataset_y)
+
+    val_x, val_y = train_x, train_y
+
+    # This is the number of bits of one of the number we are adding
+    nb_bits_number = train_x.shape[1] / 2
+
+    # Converting the data into mini-batches. For now the size of the
+    # mini-batches must divide the size of the training dataset.
+    train_x_batch = train_x.reshape(
+            len(train_x)/batch_size,
+            batch_size,
+            2*nb_bits_number)
+    train_y_batch = train_y.reshape(
+            len(train_y)/batch_size,
+            batch_size,
+            nb_bits_number)
+
+    # We create the layers for our neural network
+    input_var, train_fn, l_out = creating_model(nb_bits_number)
+
+    for epoch in range(nb_epoch):
         loss = 0
-        for i in range(len(random_data_X)):
-        # for input_batch, target_batch in zip(random_data_X, random_data_Y):
-            input_batch = random_data_X[i][0]
-            target_batch = random_data_Y[i][0]
+
+        # Trainin the model on all mini-batches
+        for i in range(len(train_x_batch)):
+            input_batch = train_x_batch[i][0]
+            target_batch = train_y_batch[i][0]
             train_fn_result = train_fn(np.array([input_batch]), target_batch)
             loss += train_fn_result
+
         if epoch % 5 == 0:
-            print("Epoch %d: Loss %g" % (epoch + 1, loss / len(random_data_X)))
-            # use trained network for predictions
-            test_prediction = lasagne.layers.get_output(l_out, deterministic=True)
+            # Every n epochs we will compute the error on the training and
+            # valisation datasets
+            print("Epoch %d: Loss %g" % (epoch, loss / len(train_x_batch)))
+
+            # Use trained network for predictions
+            test_prediction = lasagne.layers.get_output(
+                    l_out,
+                    deterministic=True)
+
+            # We define a theano function that takes one inputs and returns the
+            # precition for that input
             predict_fn = theano.function([input_var], test_prediction)
             nb_errors = []
-            for j in range(len(X)):
-                pred_bin = 1*(0.5 < predict_fn([X[j]])[0])
-                nb_errors.append(np.sum(np.absolute(Y[j] - pred_bin)))
-                # print("bit errors:\n %r" %  ( np.absolute(random_data_Y[i] - predict_fn([random_test_data_X[i]])[0])))
-            print("Average nb errors: ", np.mean(nb_errors))
+            for j in range(len(train_x)):
+                pred_bin = 1*(0.5 < predict_fn([train_x[j]])[0])
+                nb_errors.append(np.sum(np.absolute(train_y[j] - pred_bin)))
 
-    # The following function will output both the out and the hidden layer's
-    # output when some data is applied to it
-    # f = theano.function([l_in.input_var], lasagne.layers.get_output(l_out, l_hidden))
-    # print f(random_data_X[0])[1]
+            print("Error on training set: %1.4f/%d ",
+                    (np.mean(nb_errors), nb_bits_number)
+            print("Error on validation set: %1.4f/%d ",
+                    (np.mean(nb_errors), nb_bits_number)
+
+            # TODO save model every n iterations.
 
 
+if __name__ == "__main__":
+    main(batch_size=1,
+         path_main_dataset_x="../data/features.txt",
+         path_main_dataset_y="../data/targets.txt",
+         nb_epoch=5000)
