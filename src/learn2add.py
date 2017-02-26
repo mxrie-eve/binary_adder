@@ -6,7 +6,7 @@ import theano.tensor as T
 
 if __name__ == "__main__":
     SIZE_NBR_INPUT=16
-    BATCH_SIZE=1 #increasing this seems to prevent the program from learning?
+    BATCH_SIZE=1 # increasing this will help stabilize the gradient. I've already tried it without success.
 
     X = np.genfromtxt("../data/input.txt", delimiter=1)
     Y = np.genfromtxt("../data/output.txt", delimiter=1)
