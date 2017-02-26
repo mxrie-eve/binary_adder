@@ -1,15 +1,46 @@
+from future import print_function
 import numpy as np
 import theano
 import lasagne
 import theano.tensor as T
 
 
-if __name__ == "__main__":
-    SIZE_NBR_INPUT=16
-    BATCH_SIZE=1 # increasing this will help stabilize the gradient. I've already tried it without success.
+def creating_model(BATCH_SIZE=1):
+    l_in = lasagne.layers.InputLayer(
+            (BATCH_SIZE, 2*SIZE_NBR_INPUT),
+            input_var=input_var)
+    l_hidden = lasagne.layers.DenseLayer(
+            l_in,
+            num_units=1,
+            nonlinearity=lasagne.nonlinearities.rectify)
+    l_hidden = lasagne.layers.DenseLayer(
+            l_in,
+            num_units=SIZE_NBR_INPUT+1,
+            nonlinearity=lasagne.nonlinearities.rectify)
+    l_out = lasagne.layers.DenseLayer(
+            l_hidden,
+            num_units=SIZE_NBR_INPUT,
+            nonlinearity=lasagne.nonlinearities.sigmoid)
+    return l_out
 
-    X = np.genfromtxt("../data/input.txt", delimiter=1)
-    Y = np.genfromtxt("../data/output.txt", delimiter=1)
+
+def get_sets(path_main_dataset_x, path_main_dataset_y):
+
+    X = np.genfromtxt(path_main_dataset_x, delimiter=1)
+    Y = np.genfromtxt(path_main_dataset_y,  delimiter=1)
+
+    return [X, Y, [], [], [], []]
+
+
+def main(batch_size=1):
+
+    # Increasing the batch_size will help stabilize the gradient.  I've already
+    # tried it without much success.
+
+    train_x, train_y, val_x, val_y, test_x, test_y = get_sets()
+
+    # This is the number of bit of one of the number we are adding
+    SIZE_NBR_INPUT = train_x.shape[1] / 2
 
     # we batchify the data
     random_data_X = X.reshape(len(X)/BATCH_SIZE, BATCH_SIZE, 2*SIZE_NBR_INPUT)
@@ -26,11 +57,9 @@ if __name__ == "__main__":
     input_var = T.dmatrix('X')
     target_var = T.dvector('y')
 
-    # We create the layesr of our NN
-    l_in = lasagne.layers.InputLayer((BATCH_SIZE, 2*SIZE_NBR_INPUT), input_var=input_var)
-    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=1, nonlinearity=lasagne.nonlinearities.rectify)
-    l_hidden = lasagne.layers.DenseLayer(l_in, num_units=SIZE_NBR_INPUT+1, nonlinearity=lasagne.nonlinearities.rectify)
-    l_out = lasagne.layers.DenseLayer(l_hidden, num_units=SIZE_NBR_INPUT, nonlinearity=lasagne.nonlinearities.sigmoid)
+
+    # We create the layer for our neural network
+    l_out = creating_model()
 
     # create loss function
     prediction = lasagne.layers.get_output(l_out)
@@ -39,19 +68,22 @@ if __name__ == "__main__":
 
     # create parameter update expressions
     params = lasagne.layers.get_all_params(l_out, trainable=True)
-    updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate=0.01, momentum=0.9)
+    updates = lasagne.updates.nesterov_momentum(
+            loss,
+            params,
+            learning_rate=0.01,
+            momentum=0.9)
     # updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate=0.01, momentum=0.9)
 
-    # compile training function that updates parameters and returns training loss
+    # compile training function that updates parameters and returns training
+    # loss
     train_fn = theano.function([input_var, target_var], loss, updates=updates,allow_input_downcast=True)
-
-
     # train network (assuming you've got some training data in numpy arrays)
     NB_EPOCH = 7000
     for epoch in range(NB_EPOCH):
         loss = 0
         for i in range(len(random_data_X)):
-        # for input_batch, target_batch in zip(random_data_X, random_data_Y):
+            # for input_batch, target_batch in zip(random_data_X, random_data_Y):
             input_batch = random_data_X[i][0]
             target_batch = random_data_Y[i][0]
             train_fn_result = train_fn(np.array([input_batch]), target_batch)
@@ -74,3 +106,6 @@ if __name__ == "__main__":
     # print f(random_data_X[0])[1]
 
 
+if __name__ == "__main__":
+    main(batch_size=1, path_main_dataset_x="../data/features.txt",
+            path_main_dataset_y="../data/targets.txt")
