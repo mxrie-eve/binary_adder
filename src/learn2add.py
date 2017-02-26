@@ -1,4 +1,4 @@
-from future import print_function
+from __future__ import print_function
 import numpy as np
 import theano
 import lasagne
@@ -70,10 +70,13 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
             path_main_dataset_x,
             path_main_dataset_y)
 
+    val_x, val_y = train_x, train_y
+
     # This is the number of bits of one of the number we are adding
     nb_bits_number = train_x.shape[1] / 2
 
-    # Converting the data into mini-batch
+    # Converting the data into mini-batches. For now the size of the
+    # mini-batches must divide the size of the training dataset.
     train_x_batch = train_x.reshape(
             len(train_x)/batch_size,
             batch_size,
@@ -86,30 +89,44 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
     # We create the layers for our neural network
     input_var, train_fn, l_out = creating_model(nb_bits_number)
 
-    NB_EPOCH = 7000
-    for epoch in range(NB_EPOCH):
+    for epoch in range(nb_epoch):
         loss = 0
+
+        # Trainin the model on all mini-batches
         for i in range(len(train_x_batch)):
             input_batch = train_x_batch[i][0]
             target_batch = train_y_batch[i][0]
             train_fn_result = train_fn(np.array([input_batch]), target_batch)
             loss += train_fn_result
+
         if epoch % 5 == 0:
-            print("Epoch %d: Loss %g" % (epoch + 1, loss / len(train_x_batch)))
+            # Every n epochs we will compute the error on the training and
+            # valisation datasets
+            print("Epoch %d: Loss %g" % (epoch, loss / len(train_x_batch)))
 
             # Use trained network for predictions
             test_prediction = lasagne.layers.get_output(
                     l_out,
                     deterministic=True)
+
+            # We define a theano function that takes one inputs and returns the
+            # precition for that input
             predict_fn = theano.function([input_var], test_prediction)
             nb_errors = []
             for j in range(len(train_x)):
                 pred_bin = 1*(0.5 < predict_fn([train_x[j]])[0])
                 nb_errors.append(np.sum(np.absolute(train_y[j] - pred_bin)))
-            print("Average nb errors: ", np.mean(nb_errors))
+
+            print("Error on training set: %1.4f/%d ",
+                    (np.mean(nb_errors), nb_bits_number)
+            print("Error on validation set: %1.4f/%d ",
+                    (np.mean(nb_errors), nb_bits_number)
+
+            # TODO save model every n iterations.
 
 
 if __name__ == "__main__":
     main(batch_size=1,
          path_main_dataset_x="../data/features.txt",
-         path_main_dataset_y="../data/targets.txt")
+         path_main_dataset_y="../data/targets.txt",
+         nb_epoch=5000)
