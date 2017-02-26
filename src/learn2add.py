@@ -5,6 +5,12 @@ import lasagne
 import theano.tensor as T
 
 
+# Helper function:
+# ( np, ratio_training, ratio_valadation, ratio_testing)-> [np, np, np]
+def prepare_data(np_array, training_r, validation_r) :
+  return [training_array, validation_array]
+
+
 def creating_model(BATCH_SIZE=1):
     l_in = lasagne.layers.InputLayer(
             (BATCH_SIZE, 2*SIZE_NBR_INPUT),
@@ -33,6 +39,9 @@ def get_sets(path_main_dataset_x, path_main_dataset_y):
 
 
 def main(batch_size=1):
+if __name__ == "__main__":
+    SIZE_NBR_INPUT=16
+    BATCH_SIZE=1 # increasing this will help stabilize the gradient. I've already tried it without success.
 
     # Increasing the batch_size will help stabilize the gradient.  I've already
     # tried it without much success.
