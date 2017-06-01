@@ -145,7 +145,7 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
             plt.draw()
 
 	    model_saved = lasagne.layers.get_all_param_values(l_out)
-	    #np.savetxt('ModelSave.txt', model_saved)
+	    np.save('ModelSave', model_saved)
 
 	    # Then we need to use the set_all_param_values to load the model
             print(model_saved)	
