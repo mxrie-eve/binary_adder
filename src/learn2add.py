@@ -3,7 +3,6 @@ import numpy as np
 import theano
 import lasagne
 import theano.tensor as T
-import matplotlib.pyplot as plt
 
 def data_splitter(array_data, array_ratios):
     size = array_data.shape
@@ -97,8 +96,6 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
     # We create the layers for our neural network
     input_var, train_fn, l_out, l_hidden = creating_model(nb_bits_number)
 
-    plt.ion()
-    plt.figure(1)
     for epoch in range(nb_epoch):
         loss = 0
 
@@ -137,18 +134,10 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
             # Plot mean error and save model every n iterations.
             x_value.append(epoch)
             y_value.append(np.mean(nb_errors))
-	    plt.scatter(epoch,np.mean(nb_errors),color='darkred')
-            plt.xlabel('Epoch')
-            plt.ylabel('Mean Error')
-            plt.title('Error as a function of the Epoch')
-            plt.pause(0.0001)
-            plt.draw()
 
-	    model_saved = lasagne.layers.get_all_param_values(l_out)
-	    np.save('ModelSave', model_saved)
+	    np.save('../results/ModelSave', lasagne.layers.get_all_param_values(l_out))
+            np.save('../results/error.txt', np.array([x_value,y_value]).T)
 
-	    # Then we need to use the set_all_param_values to load the model
-            print(model_saved)	
 
 if __name__ == "__main__":
     main(batch_size=1,
