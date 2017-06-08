@@ -3,11 +3,23 @@ import numpy as np
 import theano
 import lasagne
 import theano.tensor as T
+from sys import argv
+
+k_fold = int(argv[1])
+ith_k_fold = int(argv[2])
+
+def k_fold_splitter(array_data, some_fold, ith_fold):
+    array_data = np.asarray(array_data)    
+    Array = np.split(array_data,some_fold)
+    testing_array = Array[ith_fold - 1]
+    training_array = np.delete(Array,testing_array)
+    return(testing_array, training_array)
+
 
 def data_splitter(array_data, array_ratios):
     size = array_data.shape
     array_returned = []
-
+    
     for i in range(len(array_ratios) - 1):
         nb_datas = int(math.floor(array_ratios[i]*size[0]))
         array_returned.append(array_data[:nb_datas])
@@ -72,7 +84,7 @@ def main(nb_epoch, path_main_dataset_x, path_main_dataset_y, batch_size=1):
     batch_size = 1
     x_value = []
     y_value = []
-
+    k_fold_splitter(x_value, k_fold,ith_k_fold )
     train_x, train_y, val_x, val_y, test_x, test_y = get_sets(
             path_main_dataset_x,
             path_main_dataset_y)
